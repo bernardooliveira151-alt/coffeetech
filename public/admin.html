@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - CoffeeTech</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Variáveis de Cores (Tema Café) */
+        :root {
+            --primary-color: #6F4E37; /* Marrom Café */
+            --primary-hover: #8B5E3C;
+            --bg-light: #F5EFEB; /* Cor Creme de fundo */
+            --text-dark: #333;
+            --white: #ffffff;
+            --danger: #e74c3c; /* Vermelho para deletar */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(111, 78, 55, 0.1); /* Sombra suave marrom */
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 10px;
+        }
+
+        /* Estilos do Formulário */
+        .form-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1; /* Ocupa o espaço disponível */
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Estilos dos Botões */
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            font-family: inherit;
+        }
+
+        button:active { transform: scale(0.98); }
+
+        .btn-cadastrar {
+            background-color: var(--primary-color);
+            color: var(--white);
+            width: 100%;
+        }
+
+        .btn-cadastrar:hover { background-color: var(--primary-hover); }
+
+        /* Estilos da Lista */
+        #lista { list-style: none; }
+
+        #lista li {
+            background: var(--bg-light);
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .user-info strong { display: block; font-size: 1.1rem; }
+        .user-info span { font-size: 0.9rem; color: #666; }
+
+        .btn-delete {
+            background-color: transparent;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--danger);
+            color: var(--white);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>☕ Painel CoffeeTech</h1>
+            <p>Gerenciamento de clientes interessados</p>
+        </header>
+
+        <section class="card">
+            <h3>✨ Novo Cadastro</h3>
+            <div class="form-group">
+                <input type="text" id="nome" placeholder="Nome Completo do Cliente">
+                <input type="email" id="email" placeholder="E-mail Principal">
+            </div>
+            <button class="btn-cadastrar" onclick="salvarUsuario()">Cadastrar Cliente</button>
+        </section>
+
+        <section class="card">
+            <h3>📋 Lista de Interessados</h3>
+            <ul id="lista">Carregando lista...</ul>
+        </section>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/usuarios';
+
+        async function carregarLista() {
+            const res = await fetch(API_URL);
+            const usuarios = await res.json();
+            const lista = document.getElementById('lista');
+            lista.innerHTML = '';
+            
+            if(usuarios.length === 0) {
+                lista.innerHTML = '<p style="text-align:center; color:#888;">Nenhum cliente cadastrado ainda.</p>';
+                return;
+            }
+
+            usuarios.forEach(user => {
+                const li = document.createElement('li');
+                // Note que mudei um pouco o HTML interno do LI para ficar mais bonito
+                li.innerHTML = `
+                    <div class="user-info">
+                        <strong>${user.nome}</strong>
+                        <span>${user.email}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deletarUsuario(${user.id})">Remover</button>
+                `;
+                lista.appendChild(li);
+            });
+        }
+
+        async function salvarUsuario() {
+            const nomeIn = document.getElementById('nome');
+            const emailIn = document.getElementById('email');
+            const nome = nomeIn.value;
+            const email = emailIn.value;
+
+            if(!nome || !email) return alert('Por favor, preencha nome e e-mail!');
+            
+            const botao = document.querySelector('.btn-cadastrar');
+            botao.innerText = 'Salvando...';
+            botao.disabled = true;
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, email })
+            });
+            
+            nomeIn.value = '';
+            emailIn.value = '';
+            botao.innerText = 'Cadastrar Cliente';
+            botao.disabled = false;
+            carregarLista();
+        }
+
+        async function deletarUsuario(id) {
+            if(confirm('Tem certeza que deseja remover este cliente da base?')) {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                carregarLista();
+            }
+        }
+
+        carregarLista();
+    </script>
+</body>
+</html>
